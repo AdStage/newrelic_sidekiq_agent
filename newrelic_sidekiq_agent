@@ -12,9 +12,9 @@ module SidekiqStatusAgent
 
   class Agent < NewRelic::Plugin::Agent::Base
 
-    agent_guid "com.atos6.newrelic-sidekiq-agent"
+    agent_guid "io.adstage.newrelic-sidekiq-agent"
     agent_config_options :instance_name, :uri, :namespace
-    agent_version '0.0.2'
+    agent_version '0.0.3'
     agent_human_labels('Sidekiq') { instance_name }
 
     def setup_metrics
@@ -28,7 +28,7 @@ module SidekiqStatusAgent
       end
 
       Sidekiq.configure_client do |config|
-        config.redis = { :url => uri, :namespace => namespace }
+        config.redis = { :url => uri }
       end
 
       begin
@@ -42,10 +42,16 @@ module SidekiqStatusAgent
         report_metric "Jobs/Rate/Failed", "Jobs/Second",      @total_failed.process(stats.failed)
         report_metric "Jobs/Failed", "Jobs",                  stats.failed || 0
 
+        max = 0
         stats.queues.each do |name, enqueued|
+          latency = Sidekiq::Queue.new(name).latency
           report_metric "Queues/#{name}", "Enqueued", enqueued
-          report_metric "Queues/#{name}", "Latency", Sidekiq::Queue.new(name).latency
+          report_metric "Queues/#{name}", "Latency", latency
+          max = latency if latency >= max
         end
+        report_metric "Jobs/Pending", "MaxLatency", max
+
+
 
       rescue Redis::TimeoutError
         raise 'Redis server timeout'
