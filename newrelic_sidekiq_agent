@@ -51,9 +51,10 @@ module SidekiqStatusAgent
           max = latency if latency >= max
         end
         report_metric "Jobs/Pending", "MaxLatency", max
-
-
-
+        workers.each do |process_id, thread_id, job|
+          latency = Time.now.utc.to_i - job['run_at']
+          report_metrics "Workers/#{job['queue']}", "Latency", latency
+        end
       rescue Redis::TimeoutError
         raise 'Redis server timeout'
       rescue  Redis::CannotConnectError, Redis::ConnectionError
