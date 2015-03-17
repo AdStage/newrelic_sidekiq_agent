@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/rvm/wrappers/newrelic_sidekiq_agent/ruby
 
 require "rubygems"
 require "bundler/setup"
@@ -8,6 +8,7 @@ require 'sidekiq'
 require 'sidekiq/api'
 require 'redis'
 
+puts "Booting SidekiqStatusAgent..."
 module SidekiqStatusAgent
 
   class Agent < NewRelic::Plugin::Agent::Base
