@@ -45,10 +45,14 @@ module SidekiqStatusAgent
 
         max = 0
         stats.queues.each do |name, enqueued|
-          latency = Sidekiq::Queue.new(name).latency
+          begin
+            latency = Sidekiq::Queue.new(name).latency
+          rescue => e
+            latency = nil
+          end
           report_metric "Queues/#{name}", "Enqueued", enqueued
-          report_metric "Queues/#{name}", "Latency", latency
-          max = latency if latency >= max
+          report_metric "Queues/#{name}", "Latency", latency if latency
+          max = latency if latency && latency >= max
         end
         report_metric "Jobs/Pending", "MaxLatency", max
         workers.each do |process_id, thread_id, job|
